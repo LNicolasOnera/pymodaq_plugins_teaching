@@ -7,10 +7,7 @@ from pymodaq_gui.parameter import Parameter
 from pymodaq.control_modules.viewer_utility_classes import DAQ_Viewer_base, comon_parameters, main
 from pymodaq.utils.data import DataFromPlugins
 
-#  TODO:
-#  Replace the following fake import with the import of the real Python wrapper of your instrument. Here we suppose that
-#  the wrapper is in the hardware directory, but it could come from an external librairy like pylablib or pymeasure.
-from pymodaq_plugins_template.hardware.python_wrapper_file_of_your_instrument import PythonWrapperObjectOfYourInstrument
+from pymodaq_plugins_teaching.hardware.spectrometer import Spectrometer
 
 # TODO:
 # (1) change the name of the following class to DAQ_1DViewer_TheNameOfYourChoice
@@ -20,7 +17,7 @@ from pymodaq_plugins_template.hardware.python_wrapper_file_of_your_instrument im
 #     pymodaq_plugins_my_plugin/daq_viewer_plugins/plugins_1D
 
 
-class DAQ_1DViewer_Template(DAQ_Viewer_base):
+class DAQ_1DViewer_Monochromator(DAQ_Viewer_base):
     """ Instrument plugin class for a 1D viewer.
     
     This object inherits all functionalities to communicate with PyMoDAQ’s DAQ_Viewer module through inheritance via
@@ -51,11 +48,10 @@ class DAQ_1DViewer_Template(DAQ_Viewer_base):
     def ini_attributes(self):
         #  TODO declare the type of the wrapper (and assign it to self.controller) you're going to use for easy
         #  autocompletion
-        self.controller: PythonWrapperObjectOfYourInstrument = None
+        self.controller: Spectrometer = None
 
         # TODO declare here attributes you want/need to init with a default value
-
-        self.x_axis = None
+        self.x_axis = self.controller.get_wavelength_axis()
 
     def commit_settings(self, param: Parameter):
         """Apply the consequences of a change of value in the detector settings
@@ -87,19 +83,18 @@ class DAQ_1DViewer_Template(DAQ_Viewer_base):
             False if initialization failed otherwise True
         """
 
-        raise NotImplementedError  # TODO when writing your own plugin remove this line and modify the one below
         if self.is_master:
-            self.controller = PythonWrapperObjectOfYourInstrument()  #instantiate you driver with whatever arguments are needed
-            self.controller.open_communication() # call eventual methods
-            initialized = self.controller.a_method_or_atttribute_to_check_if_init()  # TODO
+            self.controller = Spectrometer()
+            self.controller.open_communication()
+            initialized = self.controller.open_communication()
         else:
-            self.controller = controller
+            self.controller = Spectrometer()
             initialized = True
 
         ## TODO for your custom plugin
         # get the x_axis (you may want to to this also in the commit settings if x_axis may have changed
-        data_x_axis = self.controller.your_method_to_get_the_x_axis()  # if possible
-        self.x_axis = Axis(data=data_x_axis, label='', units='', index=0)
+        data_x_axis = self.controller.get_wavelength_axis()  # if possible
+        self.x_axis = Axis(data=data_x_axis, label='Wavelenght', units='nm', index=0)
 
         # TODO for your custom plugin. Initialize viewers pannel with the future type of data
         self.dte_signal_temp.emit(DataToExport(name='myplugin',
@@ -114,11 +109,8 @@ class DAQ_1DViewer_Template(DAQ_Viewer_base):
 
     def close(self):
         """Terminate the communication protocol"""
-        ## TODO for your custom plugin
-        raise NotImplementedError  # when writing your own plugin remove this line
         if self.is_master:
-            #  self.controller.your_method_to_terminate_the_communication()  # when writing your own plugin replace this line
-            ...
+            self.controller.close_communication()
 
     def grab_data(self, Naverage=1, **kwargs):
         """Start a grab from the detector

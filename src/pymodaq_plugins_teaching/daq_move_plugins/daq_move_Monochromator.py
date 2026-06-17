@@ -122,9 +122,14 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
         initialized: bool
             False if initialization failed otherwise True
         """
-        self.controller=Spectrometer()
-        self.controller.open_communication()
-        initialized=self.controller.open_communication()
+        if self.is_master:
+            self.controller = Spectrometer()
+            self.controller.open_communication()
+            initialized = self.controller.open_communication()
+        else:
+            self.controller = Spectrometer()
+            initialized = True
+
         self.settings.child('tau').setValue(self.controller.tau*1000)
         return "Ok", initialized
 
