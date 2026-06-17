@@ -7,9 +7,6 @@ from pymodaq_utils.utils import ThreadCommand  # object used to send info back t
 from pymodaq_gui.parameter import Parameter
 from pymodaq_data import Q_
 
-#  TODO:
-#  Replace the following fake import with the import of the real Python wrapper of your instrument. Here we suppose that
-#  the wrapper is in the hardware directory, but it could come from an external librairy like pylablib or pymeasure.
 from pymodaq_plugins_teaching.hardware.spectrometer import Spectrometer
 
 # TODO:
@@ -128,9 +125,7 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
         self.controller=Spectrometer()
         self.controller.open_communication()
         initialized=self.controller.open_communication()
-
         self.settings.child('tau').setValue(self.controller.tau*1000)
-
         return "Ok", initialized
 
     def move_abs(self, value: DataActuator):
