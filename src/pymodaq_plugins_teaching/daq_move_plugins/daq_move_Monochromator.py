@@ -99,7 +99,6 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
 
     def commit_settings(self, param: Parameter):
         """Apply the consequences of a change of value in the detector settings
-
         Parameters
         ----------
         param: Parameter
@@ -119,19 +118,16 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
 
     def ini_stage(self, controller=None):
         """Actuator communication initialization
-
         Parameters
         ----------
         controller: (object)
             custom object of a PyMoDAQ plugin (Slave case). None if only one actuator by controller (Master case)
-
         Returns
         -------
         info: str
         initialized: bool
             False if initialization failed otherwise True
         """
-
         self.controller=Spectrometer()
         self.controller.open_communication()
         initialized=self.controller.open_communication()
@@ -139,20 +135,21 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
 
     def move_abs(self, value: DataActuator):
         """ Move the actuator to the absolute target defined by value
-
         Parameters
         ----------
         value: (float) value of the absolute target positioning
         """
-
         value = self.check_bound(value)  #if user checked bounds, the defined bounds are applied here
         self.target_value = value
         value = self.set_position_with_scaling(value)  # apply scaling if the user specified one
-        self.controller.set_wavelength(value, 'abs')
+        self.controller.set_wavelength(value.value(self.axis_unit), 'abs')
+
+        # self.controller.your_method_to_set_an_absolute_value(
+        #     value.value(self.axis_unit))  # when writing your own plugin replace this line
+        self.emit_status(ThreadCommand('Update_Status', ['Move abs']))
 
     def move_rel(self, value: DataActuator):
         """ Move the actuator to the relative target actuator value defined by value
-
         Parameters
         ----------
         value: (float) value of the relative target positioning
@@ -160,7 +157,9 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
         value = self.check_bound(self.current_position + value) - self.current_position
         self.target_value = value + self.current_position
         value = self.set_position_relative_with_scaling(value)
-        self.controller.set_wavelength(value, 'rel')
+        self.controller.set_wavelength(value.value(self.axis_unit), '')
+        self.emit_status(ThreadCommand('Update_Status', ['Move rel']))
+
 
 
     def move_home(self):
