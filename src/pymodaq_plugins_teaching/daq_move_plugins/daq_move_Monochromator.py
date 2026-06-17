@@ -5,7 +5,7 @@ from pymodaq.control_modules.move_utility_classes import (DAQ_Move_base, comon_p
 
 from pymodaq_utils.utils import ThreadCommand  # object used to send info back to the main thread
 from pymodaq_gui.parameter import Parameter
-from pymodaq_plugins_teaching.hardware.spectrometer import Spectrometer
+from pymodaq_data import Q_
 
 #  TODO:
 #  Replace the following fake import with the import of the real Python wrapper of your instrument. Here we suppose that
@@ -51,7 +51,9 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
     data_actuator_type = DataActuatorType.DataActuator  # wether you use the new data style for actuator otherwise set this
     # as  DataActuatorType.float  (or entirely remove the line)
 
-    params = [   # TODO for your custom plugin: elements to be added here as dicts in order to control your custom stage
+    params = [
+        {'title': 'Tau (ms)', 'name': 'tau', 'type': 'float', 'value': 500},
+        {'title': 'Gratings', 'name': 'gratings', 'type': 'list', 'limits': ['G300', 'G1200']}
                 ] + comon_parameters_fun(is_multiaxes, axis_names=_axis_names, epsilon=_epsilon)
     # _epsilon is the initial default value for the epsilon parameter allowing pymodaq to know if the controller reached
     # the target value. It is the developer responsibility to put here a meaningful value
@@ -104,17 +106,12 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
         param: Parameter
             A given parameter (within detector_settings) whose value has been changed by the user
         """
-        ## TODO for your custom plugin
-        if param.name() == 'axis':
-            self.axis_unit = self.controller.your_method_to_get_correct_axis_unit()
-            # do this only if you can and if the units are not known beforehand, for instance
-            # if the motors connected to the controller are of different type (mm, µm, nm, , etc...)
-            # see BrushlessDCMotor from the thorlabs plugin for an exemple
+        if param.name() == 'tau':
+            tau_q=Q_(param.value(),"ms")
+            self.controller.tau = tau_q.m_as("s")
 
-        elif param.name() == "a_parameter_you've_added_in_self.params":
-           self.controller.your_method_to_apply_this_param_change()
-        else:
-            pass
+        elif param.name() == 'gratings':
+            self.controller.grating(param.value())
 
     def ini_stage(self, controller=None):
         """Actuator communication initialization
@@ -131,6 +128,9 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
         self.controller=Spectrometer()
         self.controller.open_communication()
         initialized=self.controller.open_communication()
+
+        self.settings.child('tau').setValue(self.controller.tau*1000)
+
         return "Ok", initialized
 
     def move_abs(self, value: DataActuator):
