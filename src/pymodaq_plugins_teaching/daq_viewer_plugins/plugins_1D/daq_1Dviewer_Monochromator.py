@@ -51,7 +51,7 @@ class DAQ_1DViewer_Monochromator(DAQ_Viewer_base):
         self.controller: Spectrometer = None
 
         # TODO declare here attributes you want/need to init with a default value
-        self.x_axis = self.controller.get_wavelength_axis()
+        # self.x_axis = self.controller.get_wavelength_axis()
 
     def commit_settings(self, param: Parameter):
         """Apply the consequences of a change of value in the detector settings
@@ -88,21 +88,19 @@ class DAQ_1DViewer_Monochromator(DAQ_Viewer_base):
             self.controller.open_communication()
             initialized = self.controller.open_communication()
         else:
-            self.controller = Spectrometer()
+            self.controller = controller
             initialized = True
 
         ## TODO for your custom plugin
         # get the x_axis (you may want to to this also in the commit settings if x_axis may have changed
         data_x_axis = self.controller.get_wavelength_axis()  # if possible
-        self.x_axis = Axis(data=data_x_axis, label='Wavelenght', units='nm', index=0)
+        x_axis = Axis(data=data_x_axis, label='Wavelenght', units='nm', index=0)
 
-        # TODO for your custom plugin. Initialize viewers pannel with the future type of data
         self.dte_signal_temp.emit(DataToExport(name='myplugin',
-                                               data=[DataFromPlugins(name='Mock1',
-                                                                     data=[np.array([0., 0., ...]),
-                                                                           np.array([0., 0., ...])],
-                                                                     dim='Data1D', labels=['Mock1', 'label2'],
-                                                                     axes=[self.x_axis])]))
+                                               data=[DataFromPlugins(name='Spectro',
+                                                                     data=[np.zeros(len(data_x_axis))],
+                                                                     dim='Data1D', labels=['Amplitude'],
+                                                                     axes=[x_axis])]))
 
         info = "Whatever info you want to log"
         return info, initialized
@@ -126,29 +124,17 @@ class DAQ_1DViewer_Monochromator(DAQ_Viewer_base):
         ## TODO for your custom plugin: you should choose EITHER the synchrone or the asynchrone version following
 
         ##synchrone version (blocking function)
-        data_tot = self.controller.your_method_to_start_a_grab_snap()
+        data_tot = self.controller.grab_spectrum()
+        axis=Axis('Wavelength', data=self.controller.get_wavelength_axis())
         self.dte_signal.emit(DataToExport('myplugin',
-                                          data=[DataFromPlugins(name='Mock1', data=data_tot,
-                                                                dim='Data1D', labels=['dat0', 'data1'],
-                                                                axes=[self.x_axis])]))
+                                          data=[DataFromPlugins(name='Mock1', data=[data_tot],
+                                                                dim='Data1D', labels=['data1'],
+                                                                axes=[axis])]))
 
-        ##asynchrone version (non-blocking function with callback)
-        self.controller.your_method_to_start_a_grab_snap(self.callback)
-        #########################################################
-
-
-    def callback(self):
-        """optional asynchrone method called when the detector has finished its acquisition of data"""
-        data_tot = self.controller.your_method_to_get_data_from_buffer()
-        self.dte_signal.emit(DataToExport('myplugin',
-                                          data=[DataFromPlugins(name='Mock1', data=data_tot,
-                                                                dim='Data1D', labels=['dat0', 'data1'])]))
 
     def stop(self):
         """Stop the current grab hardware wise if necessary"""
-        ## TODO for your custom plugin
-        raise NotImplementedError  # when writing your own plugin remove this line
-        self.controller.your_method_to_stop_acquisition()  # when writing your own plugin replace this line
+        self.controller.close_communication()  # when writing your own plugin replace this line
         self.emit_status(ThreadCommand('Update_Status', ['Some info you want to log']))
         ##############################
         return ''

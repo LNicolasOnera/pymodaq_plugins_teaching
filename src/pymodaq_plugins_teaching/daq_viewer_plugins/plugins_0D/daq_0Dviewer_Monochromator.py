@@ -83,7 +83,7 @@ class DAQ_0DViewer_Monochromator(DAQ_Viewer_base):
             self.controller.open_communication()
             initialized = self.controller.open_communication()
         else:
-            self.controller = Spectrometer()
+            self.controller = controller
             initialized = True
 
         return "Ok", initialized
